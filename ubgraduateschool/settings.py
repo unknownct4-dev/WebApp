@@ -14,6 +14,7 @@ import os
 from pathlib import Path  # Used to build filesystem paths in a cross-platform way
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # __file__ is this settings.py file; .resolve().parent.parent goes up two levels to the project root
@@ -114,9 +115,13 @@ WSGI_APPLICATION = 'ubgraduateschool.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 # Use DATABASE_URL in production; fall back to SQLite for local development.
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if env_bool('VERCEL') and not DATABASE_URL:
+    raise ImproperlyConfigured('DATABASE_URL must be set on Vercel.')
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        default=DATABASE_URL or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
 }
