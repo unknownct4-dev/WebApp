@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'landingpage/landingpage.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="wrapper" id="wrapper">
+  <!-- Left Panel -->
+  <div class="panel left-panel">
+    <img src="{% static 'landingpage/ublogo.png' %}" alt="University Icon" class="logo">
+    <h1>University of Bohol</h1>
+    <p>Graduate School Portal</p>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="panel right-panel">
+
+    {% if error %}
+    <div class="error-message" style="color:#e53e3e; background:#fff5f5; border:1px solid #fed7d7; border-radius:6px; padding:0.6rem 1rem; margin-bottom:0.75rem; width:100%; max-width:400px; box-sizing:border-box; text-align:center;">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Main Login Selection Section -->
+    <div id="login-section">
+      <h2>Welcome</h2>
+      <p>Please select your role to proceed</p>
+
+      <div class="login-options">
+        <div class="login-card" onclick="login('admin')">
+          <div class="icon">🔑</div>
+          <div class="info">
+            <h3>Admin Login</h3>
+            <p>System management and reporting</p>
+          </div>
+        </div>
+
+        <div class="login-card" onclick="login('student')">
+          <div class="icon">👤</div>
+          <div class="info">
+            <h3>Student Login</h3>
+            <p>Graduate enrollment and attendance</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-footer-actions">
+        <button onclick="showRegistration()">Register</button>
+      </div>
+    </div>
+
+    <!-- Admin Login Section — posts to the admin-only login URL -->
+    <div id="admin-login" class="hidden">
+      <h2>Admin Login</h2>
+      <form method="post" action="{% url 'landingpage:login_admin' %}">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div class="section-footer-actions">
+        <a href="#" onclick="backToMain()">Back to Main</a>
+      </div>
+    </div>
+
+    <!-- Student Login Section — posts to the student-only login URL -->
+    <div id="student-login" class="hidden">
+      <h2>Student Login</h2>
+      <form method="post" action="{% url 'landingpage:login_student' %}">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="ID Number" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div class="section-footer-actions">
+        <a href="#" onclick="backToMain()">Back to Main</a>
+      </div>
+    </div>
+
+    <!-- Registration Section -->
+    <div id="register-section" class="hidden">
+      <h2>Registration</h2>
+      <p>Choose your role to register</p>
+
+      <div class="register-options">
+        <div class="register-card" onclick="showRegisterForm('admin')">
+          <div class="icon">🔑</div>
+          <div class="info">
+            <h3>Admin Registration</h3>
+            <p>Register as admin</p>
+          </div>
+        </div>
+
+        <div class="register-card" onclick="showRegisterForm('student')">
+          <div class="icon">👤</div>
+          <div class="info">
+            <h3>Student Registration</h3>
+            <p>Register as student</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Registration Form — posts to the admin-only registration URL -->
+      <div id="admin-register" class="{% if show_admin_register %}{% else %}hidden{% endif %}">
+        <div class="form-wrapper">
+          <h2>Admin Registration</h2>
+          {% if admin_form.non_field_errors %}
+          <div class="form-errors" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.5rem; text-align:center;">
+            {% for error in admin_form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <form method="post" action="{% url 'landingpage:register_admin' %}">
+            {% csrf_token %}
+            <input type="text" name="last_name" placeholder="Last Name" value="{{ admin_form.last_name.value|default:'' }}" required>
+            {% if admin_form.last_name.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ admin_form.last_name.errors.0 }}</p>{% endif %}
+            <input type="text" name="first_name" placeholder="First Name" value="{{ admin_form.first_name.value|default:'' }}" required>
+            {% if admin_form.first_name.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ admin_form.first_name.errors.0 }}</p>{% endif %}
+            <input type="text" name="middle_name" placeholder="Middle Name" value="{{ admin_form.middle_name.value|default:'' }}">
+            <input type="text" name="username" placeholder="Username" value="{{ admin_form.username.value|default:'' }}" required>
+            {% if admin_form.username.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ admin_form.username.errors.0 }}</p>{% endif %}
+            <input type="password" id="admin-password" name="password" placeholder="Password" required>
+            <input type="password" id="admin-confirm-password" name="confirm_password" placeholder="Confirm Password" required>
+            <p id="admin-password-error" style="color:#e53e3e; font-size:0.82rem; margin:0; display:none;">Passwords do not match.</p>
+            <button type="submit" onclick="return validateAdminRegister(event)">Register as Admin</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Student Registration Form — posts to the student-only registration URL -->
+      <div id="student-register" class="{% if show_student_register %}{% else %}hidden{% endif %}">
+        <div class="form-wrapper">
+          <h2>Student Registration</h2>
+          {% if student_form.non_field_errors %}
+          <div class="form-errors" style="color:#e53e3e; font-size:0.85rem; margin-bottom:0.5rem; text-align:center;">
+            {% for error in student_form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <form method="post" action="{% url 'landingpage:register_student' %}">
+            {% csrf_token %}
+            <input type="text" name="last_name" placeholder="Last Name" value="{{ student_form.last_name.value|default:'' }}" required>
+            {% if student_form.last_name.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ student_form.last_name.errors.0 }}</p>{% endif %}
+            <input type="text" name="first_name" placeholder="First Name" value="{{ student_form.first_name.value|default:'' }}" required>
+            {% if student_form.first_name.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ student_form.first_name.errors.0 }}</p>{% endif %}
+            <input type="text" name="middle_name" placeholder="Middle Name" value="{{ student_form.middle_name.value|default:'' }}">
+            <input type="text" name="id_number" placeholder="ID Number" value="{{ student_form.id_number.value|default:'' }}" required>
+            {% if student_form.id_number.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ student_form.id_number.errors.0 }}</p>{% endif %}
+            <input type="email" name="email" placeholder="Email" value="{{ student_form.email.value|default:'' }}" required>
+            {% if student_form.email.errors %}<p style="color:#e53e3e;font-size:0.82rem;margin:0;">{{ student_form.email.errors.0 }}</p>{% endif %}
+            <input type="password" id="student-password" name="password" placeholder="Password" required>
+            <input type="password" id="student-confirm-password" name="confirm_password" placeholder="Confirm Password" required>
+            <p id="student-password-error" style="color:#e53e3e; font-size:0.82rem; margin:0; display:none;">Passwords do not match.</p>
+            <button type="submit" onclick="return validateStudentRegister(event)">Register as Student</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section-footer-actions">
+        <a href="#" onclick="backToMain()">Back to Login</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# Pass server-side state to JS so the correct panel is shown after a failed login or registration #}
+<script>
+  // Set by the server when a login attempt fails, so the correct login panel re-opens
+  var SERVER_LOGIN_TYPE   = "{{ login_type|default:'' }}";
+  // Set by the server when a registration attempt fails, so the correct register form re-opens
+  var SERVER_SHOW_REGISTER = {{ show_register|yesno:"true,false" }};
+  var SERVER_SHOW_ADMIN_REG   = {{ show_admin_register|yesno:"true,false" }};
+  var SERVER_SHOW_STUDENT_REG = {{ show_student_register|yesno:"true,false" }};
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'landingpage/landingpage.js' %}"></script>
+{% endblock %}

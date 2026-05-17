@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Home — University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'studenthome/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+    <header class="student-header">
+        <div>
+            <h1>University of Bohol Graduate School</h1>
+            <p class="student-subtitle">
+                Welcome to the Graduate School portal. Explore academic information,
+                program offerings, and official updates in one place.
+            </p>
+        </div>
+        <div class="student-profile">
+            <div class="profile-dropdown">
+                {% if request.user.profile_picture %}
+                <img src="{{ request.user.profile_picture.url }}"
+                     alt="Profile"
+                     class="header-avatar"
+                     onclick="toggleDropdown()">
+                {% else %}
+                <img src="{% static 'studenthome/gellman.jpg' %}"
+                     alt="Profile"
+                     class="header-avatar"
+                     onclick="toggleDropdown()">
+                {% endif %}
+                <div class="dropdown-menu hidden" id="profile-dropdown-menu">
+                    <a href="{% url 'studentprofile:index' %}">Student Profile</a>
+                    <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hidden logout form -->
+    <form id="logout-form" method="post" action="{% url 'landingpage:logout' %}" style="display:none;">
+        {% csrf_token %}
+    </form>
+
+    <nav class="student-navbar">
+        <button class="nav-item active" data-target="overview-panel">Overview</button>
+        <button class="nav-item" data-target="programs-panel">Programs</button>
+        <button class="nav-item" data-target="updates-panel">Updates</button>
+        <button class="nav-item" data-target="enrollment-panel">Enrollment</button>
+        <button class="nav-item" data-target="books-panel">Books</button>
+    </nav>
+
+    <main class="student-main">
+        <section class="student-content">
+
+            <!-- Overview Panel -->
+            <article class="content-panel" id="overview-panel">
+
+                <!-- Student Notifications -->
+                <div class="enroll-card student-notif-card">
+                    <div class="student-notif-header">
+                        <h2>My Notifications</h2>
+                        {% with total=enrollment_requests|length|add:book_submissions|length %}
+                        {% if total > 0 %}
+                        <span class="student-notif-badge">{{ total }} notification{{ total|pluralize }}</span>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+
+                        {% if not request.user.email %}
+                        <div class="student-notif-item student-notif-warning">
+                            <div class="student-notif-icon">⚠️</div>
+                            <div class="student-notif-body">
+                                <p class="student-notif-msg">Your profile does not have an email address. An email address is necessary for the office to communicate with you. Please <a href="{% url 'studentprofile:index' %}" style="color:#92400e; font-weight:700;">update your profile</a>.</p>
+                                <p class="student-notif-date">Action required</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Enrollment request notifications -->
+                        {% for req in enrollment_requests %}
+                        <div class="student-notif-item student-notif-{{ req.status }}">
+                            <div class="student-notif-icon">
+                                {% if req.status == 'verified' %}✅{% elif req.status == 'rejected' %}❌{% else %}🕐{% endif %}
+                            </div>
+                            <div class="student-notif-body">
+                                <p class="student-notif-msg">
+                                    Your enrollment request for <strong>{{ req.course.name|default:"(course removed)" }} – {{ req.year_level }}</strong>
+                                    is <strong>{{ req.get_status_display }}</strong>.
+                                </p>
+                                <p class="student-notif-date">{{ req.submitted_at|date:"F j, Y" }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Book submission notifications -->
+                        {% for sub in book_submissions %}
+                        <div class="student-notif-item student-notif-{% if sub.status == 'claimable' or sub.status == 'claimed' %}verified{% else %}{{ sub.status }}{% endif %}">
+                            <div class="student-notif-icon">
+                                {% if sub.status == 'pending' %}📚
+                                {% elif sub.status == 'processing' %}⚙️
+                                {% elif sub.status == 'claimable' %}🔔
+                                {% elif sub.status == 'claimed' %}✅
+                                {% else %}📦{% endif %}
+                            </div>
+                            <div class="student-notif-body">
+                                <p class="student-notif-msg">
+                                    {% if sub.status == 'pending' %}
+                                        Your book submission is <strong>pending</strong> — waiting for the admin to receive your books.
+                                    {% elif sub.status == 'processing' %}
+                                        Your books have been <strong>received</strong> and are currently being <strong>processed</strong>.
+                                    {% elif sub.status == 'claimable' %}
+                                        🔔 <strong>Your books are ready to claim!</strong> Please visit the office to collect your copies.
+                                    {% elif sub.status == 'claimed' %}
+                                        Your books have been <strong>claimed</strong>. Thank you!
+                                    {% else %}
+                                        Your book submission status: <strong>{{ sub.get_status_display }}</strong>.
+                                    {% endif %}
+                                </p>
+                                <p class="student-notif-date">Submitted {{ sub.submitted_at|date:"F j, Y" }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if not enrollment_requests and not book_submissions and request.user.email %}
+                        <div class="info-box">No notifications yet.</div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <div class="enroll-card">
+                    <h2>Vision and Mission</h2>
+                    <p><strong>Vision:</strong> The core graduate school of exemplary professionals.</p>
+                    <p><strong>Mission:</strong> To cultivate value-laden professionals by advancing instruction, research, publication, and extension.</p>
+                </div>
+
+                <div class="enroll-card">
+                    <h2>Core Values, Goals, and Objectives</h2>
+                    <fieldset class="subject-group">
+                        <legend>Core Values</legend>
+                        <ul>
+                            <li>Excellence - Serving towards superior quality and global competitiveness.</li>
+                            <li>Commitment - Doing work with love and inspiration.</li>
+                            <li>Social Responsibility - Actively accepting responsibility with integrity.</li>
+                        </ul>
+                    </fieldset>
+                    <p class="field-note">Goals and outcomes are aligned with quality graduate education and community-centered impact.</p>
+                    <div class="info-box">
+                        <strong>Objectives:</strong>
+                        <ol>
+                            <li>Provide advanced and multidisciplinary learning opportunities.</li>
+                            <li>Develop critical, creative, and collaborative lifelong learners.</li>
+                            <li>Produce research that addresses real community needs.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="enroll-card">
+                    <h2>Goals</h2>
+                    <div class="info-box">
+                        <ol>
+                            <li>To provide opportunities for advancement in professional growth and development through effective, efficient, flexible, and enriched instructional approaches in the graduate and post-graduate degree programs.</li>
+                            <li>To produce capable, proficient, and intellectual graduates who are respected managers and trusted leaders in their respective fields of work.</li>
+                            <li>To generate quality and relevant researches that will be utilized to respond to societal issues and challenges effectively.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="enroll-card">
+                    <h2>Objectives</h2>
+                    <p class="field-note">The University of Bohol Graduate School aims to produce graduates who are:</p>
+                    <div class="info-box">
+                        <ul>
+                            <li>well-equipped with highly advanced knowledge and skills in the specialized field of disciplines and programs through multidisciplinary and interdisciplinary approaches;</li>
+                            <li>critical, creative, and collaborative in pursuing lifelong learning; and</li>
+                            <li>highly competent in producing researches utilized effectively to address community problems and issues.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="enroll-card">
+                    <h2>Outcomes</h2>
+                    <p class="field-note">By the time of graduation, the graduates shall have the ability to:</p>
+                    <div class="info-box">
+                        <ul>
+                            <li>utilize professional expertise to create innovations in management, systems improvement, policy, and program formulation;</li>
+                            <li>engage in lifelong learning for career advancement and leadership;</li>
+                            <li>adhere to the high ethical and moral standards in the practice of one's profession; and</li>
+                            <li>publish original research for utilization in community development.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Programs Panel -->
+            <article class="content-panel hidden" id="programs-panel">
+                {% for course in courses %}
+                <div class="enroll-card">
+                    <h2>{{ course.name }}</h2>
+                    {% if course.subjects.all %}
+                    <div class="input-grid">
+                        {% for subject in course.subjects.all %}
+                        <label>
+                            {{ subject.code }}
+                            <input type="text" value="{{ subject.description }} ({{ subject.units }} units)" readonly>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="field-note">No subjects listed for this program yet.</p>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="enroll-card">
+                    <p class="field-note">No programs available yet. Please check back later.</p>
+                </div>
+                {% endfor %}
+            </article>
+
+            <!-- Updates Panel -->
+            <article class="content-panel hidden" id="updates-panel">
+                <div class="enroll-card">
+                    <h2>Latest Announcements</h2>
+                    <div class="info-box">
+                        <iframe
+                            src="https://universityofbohol.edu.ph/news/"
+                            title="University of Bohol News"
+                            class="updates-frame">
+                        </iframe>
+                    </div>
+                    <p class="message">Office Hours: Monday to Friday, 8:00 AM - 5:30 PM | Email: gradschool2024@universityofbohol.edu.ph</p>
+                    <pre class="bonpaper">For enrollment concerns, prepare your ID number, chosen program, and latest academic records before visiting the office.</pre>
+                </div>
+            </article>
+
+            <!-- Enrollment Panel -->
+            <article class="content-panel hidden" id="enrollment-panel">
+
+                <div class="enroll-card" id="enroll-form-card">
+                    <h2>Enrollment Form</h2>
+                    <div id="enroll-error-msg" style="display:none; color:#e53e3e; background:#fff5f5; border:1px solid #fed7d7; border-radius:6px; padding:0.6rem 1rem; margin-bottom:1rem;"></div>
+                    <div id="enroll-success-msg" style="display:none; color:#276749; background:#f0fff4; border:1px solid #9ae6b4; border-radius:6px; padding:0.6rem 1rem; margin-bottom:1rem;"></div>
+
+                    <form id="enrollment-form" method="post" action="{% url 'studenthome:enroll' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="enroll-form-grid">
+                            <label class="form-field">
+                                <span class="form-label">Course</span>
+                                <select id="enroll-course" name="course" onchange="onCourseChange()"
+                                            data-subjects-url="{% url 'studentenrollment:subjects_json' '0' %}">
+                                    <option value="">Choose course</option>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label class="form-field">
+                                <span class="form-label">Year Level</span>
+                                <select id="enroll-year" name="year_level" onchange="onFilterChange()">
+                                    <option value="">Choose year</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                </select>
+                            </label>
+                            <label class="form-field">
+                                <span class="form-label">Semester</span>
+                                <select id="enroll-semester" name="semester" onchange="onFilterChange()">
+                                    <option value="">Choose semester</option>
+                                    <option value="1st Semester">1st Semester</option>
+                                    <option value="2nd Semester">2nd Semester</option>
+                                    <option value="Summer">Summer</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div id="enroll-subjects-section" style="display:none; margin-bottom:20px;">
+                            <h3 style="margin:0 0 12px; font-size:1rem; color:#0f2b5f;">Select Subjects</h3>
+                            <div class="subjects-checklist" id="enroll-subjects-checklist"></div>
+                        </div>
+
+                        <div class="enroll-card" style="margin-top:16px;">
+                            <h2>Proof of Payment</h2>
+                            <p class="field-note">Upload 1 to 3 photos of your payment receipt.</p>
+                            <div class="enroll-upload-box">
+                                <label class="enroll-upload-label">
+                                    Upload Receipt
+                                    <input type="file" id="payment-upload" name="receipts" accept="image/jpeg,image/png" multiple onchange="handlePaymentUpload(event)">
+                                </label>
+                                <div id="payment-preview" class="enroll-upload-preview"></div>
+                            </div>
+                        </div>
+
+                        <div class="enroll-form-actions" style="margin-top:16px;">
+                            <button type="submit" class="btn-enroll-confirm" id="submit-enroll-btn">Submit Enrollment Request</button>
+                            <button type="button" class="btn-enroll-clear" onclick="clearEnrollForm()">Clear</button>
+                        </div>
+                        <p class="enroll-confirm-note">*By clicking submit, you confirm that all the information you entered is final.</p>
+                    </form>
+                </div>
+
+                <!-- Confirmation message (shown after submit) -->
+                <div class="enroll-card hidden" id="enroll-confirmation">
+                    <div style="text-align:center;">
+                        <div style="font-size:3rem; margin-bottom:12px;">✅</div>
+                        <h2>Enrollment Request Submitted</h2>
+                        <p>Your request is now <strong>pending verification</strong> by the admin.</p>
+                    </div>
+                </div>
+
+            </article>
+            <!-- Books Panel -->
+            <article class="content-panel hidden" id="books-panel">
+
+                <!-- Submit Books Form -->
+                <div class="enroll-card" id="books-form-card">
+                    <h2>Submit Books</h2>
+                    <p class="field-note">Enter the book title to file a book processing request. You cannot submit again while a request is still active.</p>
+
+                    <div id="books-error-msg" style="display:none; color:#e53e3e; background:#fff5f5; border:1px solid #fed7d7; border-radius:6px; padding:0.6rem 1rem; margin-bottom:1rem;"></div>
+                    <div id="books-success-msg" style="display:none; color:#276749; background:#f0fff4; border:1px solid #9ae6b4; border-radius:6px; padding:0.6rem 1rem; margin-bottom:1rem;"></div>
+
+                    <form id="books-submit-form" method="post" action="{% url 'bookmanagement:submit_books' %}">
+                        {% csrf_token %}
+
+                        <div style="margin-bottom:20px;">
+                            <label class="form-field">
+                                <span class="form-label">Book Title</span>
+                                <input type="text"
+                                       name="title_1"
+                                       placeholder="Enter book title"
+                                       required
+                                       style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:0.95rem; color:#1a202c; background:#fff; box-sizing:border-box;">
+                            </label>
+                        </div>
+
+                        <div class="enroll-form-actions">
+                            <button type="submit" class="btn-enroll-confirm">Submit Book</button>
+                            <button type="button" class="btn-enroll-clear" onclick="document.getElementById('books-submit-form').reset(); document.getElementById('books-error-msg').style.display='none'; document.getElementById('books-success-msg').style.display='none';">Clear</button>
+                        </div>
+                        <p class="enroll-confirm-note">*By clicking submit, you confirm that the book title is correct and final.</p>
+                    </form>
+                </div>
+
+                <!-- My Book Submissions -->
+                <div class="enroll-card" style="margin-top:16px;">
+                    <h2>My Book Submissions</h2>
+                    <p class="field-note">Track the status of your submitted books below.</p>
+                    <div id="books-status-list" style="margin-top:12px;">
+                        <p class="field-note" style="color:#9ca3af;">Loading…</p>
+                    </div>
+                </div>
+
+            </article>
+
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const navItems = document.querySelectorAll(".nav-item");
+    const panels = document.querySelectorAll(".content-panel");
+    const studentHeader = document.querySelector(".student-header");
+
+    function syncHeaderOffset() {
+        if (!studentHeader) return;
+        const h = Math.ceil(studentHeader.getBoundingClientRect().height);
+        document.documentElement.style.setProperty("--header-height", `${h}px`);
+    }
+    syncHeaderOffset();
+    window.addEventListener("resize", syncHeaderOffset);
+
+    navItems.forEach((button) => {
+        button.addEventListener("click", () => {
+            navItems.forEach((item) => item.classList.remove("active"));
+            button.classList.add("active");
+            const target = button.dataset.target;
+            panels.forEach((panel) => {
+                panel.classList.toggle("hidden", panel.id !== target);
+            });
+        });
+    });
+
+    function toggleDropdown() {
+        document.getElementById('profile-dropdown-menu').classList.toggle('hidden');
+    }
+
+    document.addEventListener("click", (event) => {
+        if (!event.target.closest(".profile-dropdown")) {
+            const menu = document.getElementById('profile-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        }
+    });
+
+    // Enrollment form — fetch subjects filtered by course + year + semester
+    function getSubjectsUrl() {
+        const courseId = document.getElementById('enroll-course').value;
+        const yearLevel = document.getElementById('enroll-year').value;
+        const semester = document.getElementById('enroll-semester').value;
+        if (!courseId) return null;
+        const base = document.getElementById('enroll-course').dataset.subjectsUrl;
+        const url = base.replace('/0/', `/${courseId}/`);
+        const params = new URLSearchParams();
+        if (yearLevel) params.set('year_level', yearLevel);
+        if (semester) params.set('semester', semester);
+        return `${url}?${params.toString()}`;
+    }
+
+    function loadSubjects() {
+        const url = getSubjectsUrl();
+        const section = document.getElementById('enroll-subjects-section');
+        const checklist = document.getElementById('enroll-subjects-checklist');
+
+        if (!url) {
+            section.style.display = 'none';
+            checklist.innerHTML = '';
+            return;
+        }
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (data.subjects && data.subjects.length > 0) {
+                    checklist.innerHTML = data.subjects.map(s => `
+                        <label class="subject-check-item">
+                            <input type="checkbox" name="subjects" value="${s.id}" data-units="${s.units}" onchange="updateUnitCounter()">
+                            <span>${s.code} – ${s.description} (${s.units} units)</span>
+                        </label>`).join('') +
+                        `<div id="unit-counter" class="unit-counter">0 / 9 units selected</div>`;
+                    section.style.display = 'block';
+                    updateUnitCounter();
+                } else {
+                    checklist.innerHTML = '<p class="field-note">No subjects available for the selected year and semester.</p>';
+                    section.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                checklist.innerHTML = '<p class="field-note" style="color:#e53e3e;">Failed to load subjects. Please try again.</p>';
+                section.style.display = 'block';
+            });
+    }
+
+    function onCourseChange() { loadSubjects(); }
+    function onFilterChange() { loadSubjects(); }
+
+    function getTotalSelectedUnits() {
+        return Array.from(document.querySelectorAll('input[name="subjects"]:checked'))
+                    .reduce((sum, cb) => sum + parseInt(cb.dataset.units || 0), 0);
+    }
+
+    function updateUnitCounter() {
+        const total = getTotalSelectedUnits();
+        const counter = document.getElementById('unit-counter');
+        if (counter) {
+            counter.textContent = `${total} / 9 units selected`;
+            counter.className = 'unit-counter' + (total >= 9 ? ' at-max' : '');
+        }
+        document.querySelectorAll('input[name="subjects"]').forEach(cb => {
+            if (!cb.checked) cb.disabled = total >= 9;
+        });
+    }
+
+    function clearEnrollForm() {
+        document.getElementById('enroll-course').value = '';
+        document.getElementById('enroll-year').value = '';
+        document.getElementById('enroll-semester').value = '';
+        document.getElementById('enroll-subjects-section').style.display = 'none';
+        document.getElementById('enroll-subjects-checklist').innerHTML = '';
+        document.getElementById('payment-upload').value = '';
+        document.getElementById('payment-preview').innerHTML = '';
+        document.getElementById('enroll-error-msg').style.display = 'none';
+        document.getElementById('enroll-success-msg').style.display = 'none';
+    }
+
+    function handlePaymentUpload(event) {
+        const files = Array.from(event.target.files).slice(0, 3);
+        const preview = document.getElementById('payment-preview');
+        preview.innerHTML = '';
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'enroll-preview-img';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // AJAX form submission
+    document.getElementById('enrollment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const errorMsg = document.getElementById('enroll-error-msg');
+        const successMsg = document.getElementById('enroll-success-msg');
+        errorMsg.style.display = 'none';
+        successMsg.style.display = 'none';
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                document.getElementById('enroll-form-card').style.display = 'none';
+                document.getElementById('enroll-confirmation').classList.remove('hidden');
+            } else {
+                errorMsg.innerHTML = (data.errors || ['An error occurred.']).join('<br>');
+                errorMsg.style.display = 'block';
+            }
+        })
+        .catch(() => {
+            errorMsg.textContent = 'Network error. Please try again.';
+            errorMsg.style.display = 'block';
+        });
+    });
+
+    // ── Books panel ──────────────────────────────────────────────────────
+    const STATUS_LABELS = {
+        pending:    { label: '🕐 Pending',           cls: 'pending' },
+        received:   { label: '📦 Received',          cls: 'pending' },
+        processing: { label: '⚙️ Processing Books',  cls: 'pending' },
+        claimable:  { label: '✅ Ready to Claim',    cls: 'verified' },
+        claimed:    { label: '🎉 Claimed',            cls: 'verified' },
+    };
+
+    function loadBookStatus() {
+        fetch("{% url 'bookmanagement:book_status' %}")
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('books-status-list');
+                if (!data.submissions || data.submissions.length === 0) {
+                    list.innerHTML = '<div class="info-box">No book submissions yet.</div>';
+                    return;
+                }
+                list.innerHTML = data.submissions.map(sub => {
+                    const s = STATUS_LABELS[sub.status] || { label: sub.status_display, cls: 'pending' };
+                    const bookRows = sub.books.map((t, i) =>
+                        `<tr>
+                           <td style="padding:7px 12px;color:#6b7280;font-size:0.85rem;">${i+1}</td>
+                           <td style="padding:7px 12px;font-size:0.9rem;color:#1a202c;">${t}</td>
+                         </tr>`
+                    ).join('');
+                    return `
+                    <div class="enroll-card" style="margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div>
+                                <strong style="font-size:0.95rem;color:#1a202c;">Submitted ${sub.submitted_at}</strong>
+                            </div>
+                            <span class="enroll-status-badge ${s.cls}">${s.label}</span>
+                        </div>
+                        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th style="padding:8px 12px;text-align:left;font-size:0.82rem;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;width:40px;">#</th>
+                                    <th style="padding:8px 12px;text-align:left;font-size:0.82rem;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">Book Title</th>
+                                </tr>
+                            </thead>
+                            <tbody>${bookRows}</tbody>
+                        </table>
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => {
+                document.getElementById('books-status-list').innerHTML =
+                    '<div class="info-box" style="border-color:#fca5a5;background:#fff5f5;color:#991b1b;">Failed to load submissions. Please refresh the page.</div>';
+            });
+    }
+
+    // Load status when Books tab is opened
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.target === 'books-panel') loadBookStatus();
+        });
+    });
+
+    // Books form AJAX submit
+    document.getElementById('books-submit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const errorMsg = document.getElementById('books-error-msg');
+        const successMsg = document.getElementById('books-success-msg');
+        errorMsg.style.display = 'none';
+        successMsg.style.display = 'none';
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                successMsg.textContent = data.message;
+                successMsg.style.display = 'block';
+                this.reset();
+                loadBookStatus();
+            } else {
+                errorMsg.innerHTML = (data.errors || ['An error occurred.']).join('<br>');
+                errorMsg.style.display = 'block';
+            }
+        })
+        .catch(() => {
+            errorMsg.textContent = 'Network error. Please try again.';
+            errorMsg.style.display = 'block';
+        });
+    });
+</script>
+{% endblock %}

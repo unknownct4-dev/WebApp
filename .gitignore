@@ -1,0 +1,9 @@
+# Django
+media/
+staticfiles/admin/
+staticfiles_build/
+db.sqlite3
+*.pyc
+__pycache__/
+*.pyo
+.env

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Claimed Books — University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'bookmanagement/claimed-books.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+    <header class="student-header">
+        <div class="brand-info">
+            <h1>Claim Books</h1>
+            <div class="brand-tagline">Book claiming management</div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'bookmanagement:claim' %}" class="btn btn-secondary">
+                <i class="fas fa-plus"></i> New Claim
+            </a>
+            <form method="post" action="{% url 'landingpage:logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="student-main">
+        <section class="enroll-card">
+            <h2>Claimed Books List</h2>
+
+            {% if claims %}
+            <ul class="claimed-books-list" style="list-style:none; padding:0; margin:0;">
+                {% for claim in claims %}
+                <li class="claimed-book-item" style="padding:0.75rem 0; border-bottom:1px solid #e2e8f0;">
+                    <strong>{{ claim.book_title }}</strong>
+                    (Qty: {{ claim.quantity }})
+                    — Course: {{ claim.course_name }}
+                    {% if claim.phone %}
+                    — Phone: {{ claim.phone }}
+                    {% endif %}
+                    — Claimed on: {{ claim.submitted_at|date:"F j, Y, g:i a" }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="field-note" style="color:#718096; margin-top:1rem;">No books claimed yet.</p>
+            {% endif %}
+
+            <div style="margin-top:1.5rem;">
+                <a href="{% url 'bookmanagement:claim' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Claim Form
+                </a>
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}

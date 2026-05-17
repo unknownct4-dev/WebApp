@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile</title>
+    <link rel="stylesheet" href="studentprofile.css">
+</head>
+<body>
+    <div class="student-container">
+
+        <!-- Header -->
+        <header class="student-header">
+            <div>
+                <h1>Student Profile</h1>
+                <p class="student-subtitle">View and manage your personal information and enrollment details.</p>
+            </div>
+            <div class="student-profile">
+                <div class="profile-dropdown">
+                    <img id="header-avatar" src="default-avatar.png" alt="My Account"
+                         onerror="this.src='https://via.placeholder.com/150?text=Photo'"
+                         class="header-avatar" onclick="toggleProfileMenu()">
+                    <div class="dropdown-menu hidden" id="profile-dropdown-menu">
+                        <a href="../studenthome/home.html">Home</a>
+                        <a href="#" onclick="logout()">Log Out</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navbar -->
+        <nav class="student-navbar">
+            <button class="nav-item active" data-target="profile-panel">Profile</button>
+            <button class="nav-item" data-target="enrollment-panel">Enrollment</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="student-main">
+            <section class="student-content">
+
+                <!-- Profile Panel -->
+                <article class="content-panel" id="profile-panel">
+                    <div class="enroll-card profile-card">
+
+                        <!-- Profile Picture -->
+                        <div class="profile-picture-section">
+                            <div class="picture-wrapper">
+                                <img id="profile-picture" src="default-avatar.png" alt="Student Photo"
+                                     onerror="this.src='https://via.placeholder.com/150?text=Photo'">
+                                <label class="change-photo-btn" for="photo-upload" title="Change Photo">
+                                    ✏️ Change Photo
+                                </label>
+                                <input type="file" id="photo-upload" accept="image/*" onchange="changePhoto(event)">
+                            </div>
+                        </div>
+
+                        <!-- Student Info -->
+                        <div class="profile-info">
+                            <div class="profile-info-header">
+                                <div>
+                                    <h2 id="student-fullname">Juan Dela Cruz</h2>
+                                    <p class="student-id-display">ID No.: <strong id="student-id">2024-00001</strong></p>
+                                </div>
+                                <button class="btn-edit-profile" id="edit-btn" onclick="toggleEdit()">✏️ Edit</button>
+                            </div>
+
+                            <!-- View Mode -->
+                            <div id="view-mode">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label">ID Number</span>
+                                        <span class="info-value" id="student-id-display">2024-00001</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Last Name</span>
+                                        <span class="info-value" id="student-lastname">Dela Cruz</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">First Name</span>
+                                        <span class="info-value" id="student-firstname">Juan</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Middle Name</span>
+                                        <span class="info-value" id="student-middlename">Santos</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Email</span>
+                                        <span class="info-value" id="student-email">juan.delacruz@email.com</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Course</span>
+                                        <span class="info-value" id="student-course">Master of Arts in Educational Management</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Year Level</span>
+                                        <span class="info-value" id="student-year">—</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Enrollment Status</span>
+                                        <span class="info-value" id="student-enroll-status-badge"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Edit Mode -->
+                            <div id="edit-mode" class="hidden">
+                                <div class="edit-grid">
+                                    <label class="edit-field">
+                                        <span class="edit-label">ID Number</span>
+                                        <input type="text" id="edit-id" placeholder="ID Number">
+                                    </label>
+                                    <label class="edit-field">
+                                        <span class="edit-label">Last Name</span>
+                                        <input type="text" id="edit-lastname" placeholder="Last Name">
+                                    </label>
+                                    <label class="edit-field">
+                                        <span class="edit-label">First Name</span>
+                                        <input type="text" id="edit-firstname" placeholder="First Name">
+                                    </label>
+                                    <label class="edit-field">
+                                        <span class="edit-label">Middle Name</span>
+                                        <input type="text" id="edit-middlename" placeholder="Middle Name">
+                                    </label>
+                                    <label class="edit-field">
+                                        <span class="edit-label">Email</span>
+                                        <input type="email" id="edit-email" placeholder="Email">
+                                    </label>
+                                    <!-- Course and Year Level are read-only — set by admin via enrollment verification -->
+                                </div>
+                                <div class="edit-actions">
+                                    <button class="btn-cancel-edit" onclick="cancelEdit()">Cancel</button>
+                                    <button class="btn-save-edit" onclick="saveEdit()">Save Changes</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Enrollment Panel -->
+                <article class="content-panel hidden" id="enrollment-panel">
+                    <div class="enroll-card">
+                        <h2>Enrolled Subjects</h2>
+                        <p class="field-note">Showing subjects for the current semester.</p>
+
+                        <div class="subjects-table-wrapper">
+                            <table class="subjects-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Subject Code</th>
+                                        <th>Subject Name</th>
+                                        <th>Units</th>
+                                        <th>Schedule</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjects-tbody">
+                                    <!-- Populated via JS (simulated from registration DB) -->
+                                    <tr>
+                                        <td>1</td>
+                                        <td>MAEM 101</td>
+                                        <td>Foundations of Educational Management</td>
+                                        <td>3</td>
+                                        <td>Sat 8:00 AM – 11:00 AM</td>
+                                        <td><span class="status-badge enrolled">Enrolled</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>MAEM 102</td>
+                                        <td>Research Methods in Education</td>
+                                        <td>3</td>
+                                        <td>Sat 1:00 PM – 4:00 PM</td>
+                                        <td><span class="status-badge enrolled">Enrolled</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>MAEM 103</td>
+                                        <td>Curriculum Development and Evaluation</td>
+                                        <td>3</td>
+                                        <td>Sun 8:00 AM – 11:00 AM</td>
+                                        <td><span class="status-badge pending">Pending</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>MAEM 104</td>
+                                        <td>Human Resource Management in Education</td>
+                                        <td>3</td>
+                                        <td>Sun 1:00 PM – 4:00 PM</td>
+                                        <td><span class="status-badge dropped">Dropped</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="info-box" style="margin-top: 20px;">
+                            <strong>Total Enrolled Units:</strong> <span id="total-units">6</span> units
+                            &nbsp;|&nbsp;
+                            <strong>Enrollment Status:</strong> <span id="enrollment-status">Partially Enrolled</span>
+                        </div>
+                    </div>
+                </article>
+
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Nav tab switching
+        const navItems = document.querySelectorAll('.nav-item');
+        const panels = document.querySelectorAll('.content-panel');
+        const studentHeader = document.querySelector('.student-header');
+
+        // Keep padding in sync with fixed header height
+        function syncHeaderOffset() {
+            if (!studentHeader) return;
+            const h = Math.ceil(studentHeader.getBoundingClientRect().height);
+            document.documentElement.style.setProperty('--header-height', `${h}px`);
+        }
+        syncHeaderOffset();
+        window.addEventListener('resize', syncHeaderOffset);
+        if (window.ResizeObserver && studentHeader) {
+            new ResizeObserver(syncHeaderOffset).observe(studentHeader);
+        }
+
+        navItems.forEach((button) => {
+            button.addEventListener('click', () => {
+                navItems.forEach((item) => item.classList.remove('active'));
+                button.classList.add('active');
+
+                const target = button.dataset.target;
+                panels.forEach((panel) => {
+                    panel.classList.toggle('hidden', panel.id !== target);
+                });
+            });
+        });
+
+        // Profile dropdown
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profile-dropdown-menu');
+            dropdown.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.profile-dropdown')) {
+                document.getElementById('profile-dropdown-menu').classList.add('hidden');
+            }
+        });
+
+        // Change profile photo
+        function changePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profile-picture').src = e.target.result;
+                document.getElementById('header-avatar').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Logout
+        function logout() {
+            window.location.href = '../landingpage/landingpage.html';
+        }
+
+        // Student data (simulated from registration DB)
+        let studentData = {
+            lastname: 'Dela Cruz',
+            firstname: 'Juan',
+            middlename: 'Santos',
+            id: '2024-00001',
+            email: 'juan.delacruz@email.com'
+        };
+
+        // Simulated enrollment record — set by admin verification
+        // status: 'not_enrolled' | 'pending' | 'enrolled'
+        const enrollmentRecord = {
+            status: 'pending',   // change to 'enrolled', 'pending', or 'not_enrolled' to test
+            year: '1st Year',    // only meaningful when status is 'enrolled' or 'pending'
+            course: 'Master of Arts in Educational Management'
+        };
+
+        function getEnrollmentBadgeHTML(status, year) {
+            if (status === 'enrolled') {
+                return `<span class="enroll-status-pill enrolled">✅ Enrolled${year ? ' – ' + year : ''}</span>`;
+            } else if (status === 'pending') {
+                return `<span class="enroll-status-pill pending">🕐 Enrollment Pending${year ? ' – ' + year : ''}</span>`;
+            } else {
+                return `<span class="enroll-status-pill not-enrolled">❌ Not Enrolled</span>`;
+            }
+        }
+
+        function renderProfile() {
+            const { lastname, firstname, middlename, id, email } = studentData;
+            const fullname = `${lastname}, ${firstname}${middlename ? ' ' + middlename : ''}`;
+
+            document.getElementById('student-fullname').textContent = fullname;
+            document.getElementById('student-id').textContent = id;
+            document.getElementById('student-id-display').textContent = id;
+            document.getElementById('student-lastname').textContent = lastname;
+            document.getElementById('student-firstname').textContent = firstname;
+            document.getElementById('student-middlename').textContent = middlename || '—';
+            document.getElementById('student-email').textContent = email || '—';
+
+            // Course and year come from enrollment record, not editable by student
+            const hasEnrollment = enrollmentRecord.status !== 'not_enrolled';
+            document.getElementById('student-course').textContent =
+                hasEnrollment && enrollmentRecord.course ? enrollmentRecord.course : '—';
+            document.getElementById('student-year').textContent =
+                hasEnrollment && enrollmentRecord.year ? enrollmentRecord.year : '—';
+
+            // Enrollment status badge
+            document.getElementById('student-enroll-status-badge').innerHTML =
+                getEnrollmentBadgeHTML(enrollmentRecord.status, enrollmentRecord.year);
+        }
+
+        function toggleEdit() {
+            document.getElementById('edit-id').value = studentData.id;
+            document.getElementById('edit-lastname').value = studentData.lastname;
+            document.getElementById('edit-firstname').value = studentData.firstname;
+            document.getElementById('edit-middlename').value = studentData.middlename;
+            document.getElementById('edit-email').value = studentData.email;
+            // Course and Year Level are NOT editable
+
+            document.getElementById('view-mode').classList.add('hidden');
+            document.getElementById('edit-mode').classList.remove('hidden');
+            document.getElementById('edit-btn').style.display = 'none';
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit-mode').classList.add('hidden');
+            document.getElementById('view-mode').classList.remove('hidden');
+            document.getElementById('edit-btn').style.display = '';
+        }
+
+        function saveEdit() {
+            const id         = document.getElementById('edit-id').value.trim();
+            const lastname   = document.getElementById('edit-lastname').value.trim();
+            const firstname  = document.getElementById('edit-firstname').value.trim();
+            const middlename = document.getElementById('edit-middlename').value.trim();
+            const email      = document.getElementById('edit-email').value.trim();
+
+            if (!id || !lastname || !firstname) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            studentData = { id, lastname, firstname, middlename, email };
+            renderProfile();
+            cancelEdit();
+        }
+
+        // Initial load
+        renderProfile();
+    </script>
+</body>
+</html>

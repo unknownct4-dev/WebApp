@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrolled Student Records</title>
+  <style>
+    :root {
+      color: #111827;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+    }
+
+    body {
+      margin: 0;
+      background: #f3f4f6;
+    }
+
+    .page {
+      width: min(100%, 1100px);
+      margin: 24px auto;
+      background: #fff;
+      padding: 28px 32px;
+      box-sizing: border-box;
+    }
+
+    .report-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .report-actions button {
+      border: 0;
+      border-radius: 6px;
+      background: #0f2b5f;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 10px 14px;
+    }
+
+    .report-header {
+      border-bottom: 2px solid #0f2b5f;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      text-align: center;
+    }
+
+    .report-header h1,
+    .report-header h2,
+    .report-header p {
+      margin: 0;
+    }
+
+    .report-header h1 {
+      color: #0f2b5f;
+      font-size: 18px;
+      text-transform: uppercase;
+    }
+
+    .report-header h2 {
+      font-size: 15px;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .report-meta {
+      color: #4b5563;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .course-group {
+      break-inside: avoid;
+      margin-bottom: 22px;
+    }
+
+    .course-title {
+      background: #0f2b5f;
+      color: #fff;
+      font-size: 13px;
+      margin: 0;
+      padding: 8px 10px;
+    }
+
+    .year-title {
+      background: #e5e7eb;
+      color: #111827;
+      font-size: 12px;
+      margin: 0;
+      padding: 7px 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border: 1px solid #d1d5db;
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f9fafb;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .empty-state {
+      border: 1px solid #d1d5db;
+      color: #6b7280;
+      padding: 18px;
+      text-align: center;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      .report-actions {
+        display: none;
+      }
+
+      @page {
+        margin: 12mm;
+        size: landscape;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="report-actions">
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+
+    <header class="report-header">
+      <h1>University of Bohol Graduate School</h1>
+      <p>Graduate School Portal</p>
+      <h2>Enrolled Student Records</h2>
+    </header>
+
+    <div class="report-meta">
+      <span>Sorted by course and year level</span>
+      <span>Generated: {{ generated_at|date:"F j, Y g:i A" }}</span>
+    </div>
+
+    {% if not enrollment_records %}
+      <div class="empty-state">No verified enrolled student records found.</div>
+    {% else %}
+      {% regroup enrollment_records by course as course_groups %}
+      {% for course_group in course_groups %}
+        <section class="course-group">
+          <h3 class="course-title">
+            {% if course_group.grouper %}
+              {{ course_group.grouper.name }}
+            {% else %}
+              Unassigned Course
+            {% endif %}
+          </h3>
+
+          {% regroup course_group.list by year_level as year_groups %}
+          {% for year_group in year_groups %}
+            <h4 class="year-title">{{ year_group.grouper }}</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:42px;">#</th>
+                  <th>Student Name</th>
+                  <th>ID Number</th>
+                  <th>Semester</th>
+                  <th>Date Enrolled</th>
+                  <th>Total Units</th>
+                  <th>Subjects</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in year_group.list %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ record.student.get_full_name|default:record.student.username }}</strong></td>
+                    <td>{{ record.student.id_number|default:"-" }}</td>
+                    <td>{{ record.semester }}</td>
+                    <td>{{ record.submitted_at|date:"Y-m-d" }}</td>
+                    <td>{{ record.total_units }}</td>
+                    <td>
+                      {% for subject in record.subjects.all %}
+                        {{ subject.code }}{% if not forloop.last %}, {% endif %}
+                      {% empty %}
+                        -
+                      {% endfor %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endfor %}
+        </section>
+      {% endfor %}
+    {% endif %}
+  </main>
+</body>
+</html>

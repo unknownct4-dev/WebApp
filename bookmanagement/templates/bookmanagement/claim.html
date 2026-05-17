@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Claim Books — University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'bookmanagement/claim-books.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+    <header class="student-header">
+        <div class="brand-info">
+            <h1>Claim Books</h1>
+            <div class="brand-tagline">Book claiming management</div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'bookmanagement:claimed' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> View Claims
+            </a>
+            <form method="post" action="{% url 'landingpage:logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="student-main">
+        <section class="enroll-card">
+            <h2>Book Claim Form</h2>
+
+            {% if success %}
+            <div class="notification success" style="display:flex; align-items:center; gap:8px; background:#f0fff4; border:1px solid #9ae6b4; border-radius:6px; padding:0.75rem 1rem; margin-bottom:1.25rem; color:#276749;">
+                <i class="fas fa-check-circle"></i>
+                <span>Book claim submitted successfully.</span>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'bookmanagement:claim' %}" class="enroll-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="form-errors" style="background:#fff5f5; border:1px solid #fed7d7; border-radius:6px; padding:0.6rem 1rem; margin-bottom:1rem; color:#c53030;">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label for="{{ form.course_name.id_for_label }}">
+                            <i class="fas fa-graduation-cap"></i> Course
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-book-open input-icon"></i>
+                            {{ form.course_name }}
+                        </div>
+                        {% if form.course_name.errors %}
+                        <ul class="field-errors" style="color:#c53030; font-size:0.85rem; margin-top:4px; padding-left:0; list-style:none;">
+                            {% for error in form.course_name.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.book_title.id_for_label }}">
+                            <i class="fas fa-book"></i> Book Title
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-heading input-icon"></i>
+                            {{ form.book_title }}
+                        </div>
+                        {% if form.book_title.errors %}
+                        <ul class="field-errors" style="color:#c53030; font-size:0.85rem; margin-top:4px; padding-left:0; list-style:none;">
+                            {% for error in form.book_title.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.quantity.id_for_label }}">
+                            <i class="fas fa-hashtag"></i> Quantity
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-calculator input-icon"></i>
+                            {{ form.quantity }}
+                        </div>
+                        {% if form.quantity.errors %}
+                        <ul class="field-errors" style="color:#c53030; font-size:0.85rem; margin-top:4px; padding-left:0; list-style:none;">
+                            {% for error in form.quantity.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.phone.id_for_label }}">
+                        <i class="fas fa-phone"></i> Phone Number <span class="final-note">(Optional)</span>
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-mobile-alt input-icon"></i>
+                        {{ form.phone }}
+                    </div>
+                    {% if form.phone.errors %}
+                    <ul class="field-errors" style="color:#c53030; font-size:0.85rem; margin-top:4px; padding-left:0; list-style:none;">
+                        {% for error in form.phone.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <div class="agreement">
+                    <i class="fas fa-info-circle" style="color: #3b82f6; margin-top: 2px;"></i>
+                    <div>By submitting this form, you confirm the books are already claimed and your entry is final.</div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Claim
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Reset Form
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+{% endblock %}

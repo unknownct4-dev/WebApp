@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enrollment Confirmation – University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'studentenrollment/studentenrollment.css' %}">
+<style>
+    .confirmation-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        padding: 32px;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .confirmation-card h2 {
+        margin-top: 0;
+        color: #0057ff;
+        font-size: 1.5rem;
+    }
+    .confirmation-success-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+    .confirmation-success-banner .check-icon {
+        font-size: 1.8rem;
+        color: #16a34a;
+    }
+    .confirmation-success-banner p {
+        margin: 0;
+        color: #15803d;
+        font-weight: 600;
+    }
+    .confirmation-detail-row {
+        display: flex;
+        gap: 8px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.97rem;
+    }
+    .confirmation-detail-row:last-child {
+        border-bottom: none;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #475569;
+        min-width: 120px;
+    }
+    .detail-value {
+        color: #1e293b;
+    }
+    .subjects-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 0.95rem;
+    }
+    .subjects-table th {
+        text-align: left;
+        padding: 8px 12px;
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .subjects-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+    }
+    .subjects-table tr:last-child td {
+        border-bottom: none;
+    }
+    .total-units-row td {
+        font-weight: 700;
+        color: #0057ff;
+        background: #f0f6ff;
+        border-top: 2px solid #e2e8f0;
+    }
+    .confirmation-actions {
+        margin-top: 28px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .btn-home {
+        display: inline-block;
+        padding: 10px 24px;
+        background: #0057ff;
+        color: #fff;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: background 0.2s;
+    }
+    .btn-home:hover {
+        background: #0041cc;
+    }
+    .no-enrollment-msg {
+        text-align: center;
+        padding: 48px 24px;
+        color: #64748b;
+    }
+    .no-enrollment-msg p {
+        margin-bottom: 20px;
+        font-size: 1.05rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+
+    <!-- Header -->
+    <header class="student-header">
+        <div>
+            <h1>University of Bohol Graduate School</h1>
+            <p class="student-subtitle">Enrollment Portal – Confirmation</p>
+        </div>
+        <div class="student-profile">
+            <div class="profile-dropdown">
+                <img id="header-avatar" src="{% static 'studenthome/gellman.jpg' %}" alt="My Account"
+                     class="header-avatar" onclick="toggleProfileMenu()">
+                <div class="dropdown-menu hidden" id="profile-dropdown-menu">
+                    <a href="{% url 'studenthome:index' %}">Home</a>
+                    <a href="{% url 'studentprofile:index' %}">Student Profile</a>
+                    <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hidden logout form -->
+    <form id="logout-form" method="post" action="{% url 'landingpage:logout' %}" style="display:none;">
+        {% csrf_token %}
+    </form>
+
+    <!-- Navbar -->
+    <nav class="student-navbar">
+        <a href="{% url 'studenthome:index' %}" class="back-menu-button">← Home</a>
+        <button class="nav-item active">Confirmation</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="student-main">
+        <section class="student-content">
+            <article class="content-panel">
+
+                {% if enrollment_request %}
+
+                <div class="confirmation-card">
+                    <h2>Enrollment Submitted</h2>
+
+                    <!-- Success banner -->
+                    <div class="confirmation-success-banner">
+                        <span class="check-icon">✓</span>
+                        <p>Your enrollment request has been submitted successfully and is pending review.</p>
+                    </div>
+
+                    <!-- Course & Year Level -->
+                    <div class="confirmation-detail-row">
+                        <span class="detail-label">Course</span>
+                        <span class="detail-value">{{ enrollment_request.course.name }}</span>
+                    </div>
+                    <div class="confirmation-detail-row">
+                        <span class="detail-label">Year Level</span>
+                        <span class="detail-value">{{ enrollment_request.year_level }}</span>
+                    </div>
+                    <div class="confirmation-detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">{{ enrollment_request.get_status_display }}</span>
+                    </div>
+                    <div class="confirmation-detail-row">
+                        <span class="detail-label">Submitted</span>
+                        <span class="detail-value">{{ enrollment_request.submitted_at|date:"F j, Y, g:i a" }}</span>
+                    </div>
+
+                    <!-- Subjects Table -->
+                    <div style="margin-top: 24px;">
+                        <h3 style="margin-bottom: 8px; color: #334155; font-size: 1.05rem;">Selected Subjects</h3>
+                        {% with subjects=enrollment_request.subjects.all %}
+                        {% if subjects %}
+                        <table class="subjects-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Subject Name</th>
+                                    <th style="text-align:right;">Units</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in subjects %}
+                                <tr>
+                                    <td>{{ subject.code }}</td>
+                                    <td>{{ subject.description }}</td>
+                                    <td style="text-align:right;">{{ subject.units }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="total-units-row">
+                                    <td colspan="2">Total Units</td>
+                                    <td style="text-align:right;">{{ total_units }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p style="color:#64748b; font-size:0.95rem;">No subjects were recorded for this enrollment.</p>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="confirmation-actions">
+                        <a href="{% url 'studenthome:index' %}" class="btn-home">← Back to Home</a>
+                    </div>
+                </div>
+
+                {% else %}
+
+                <div class="confirmation-card">
+                    <div class="no-enrollment-msg">
+                        <p>No enrollment request found. Your session may have expired or the request could not be located.</p>
+                        <a href="{% url 'studenthome:index' %}" class="btn-home">← Back to Home</a>
+                    </div>
+                </div>
+
+                {% endif %}
+
+            </article>
+        </section>
+    </main>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleProfileMenu() {
+        document.getElementById('profile-dropdown-menu').classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.profile-dropdown')) {
+            const menu = document.getElementById('profile-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enrollment Summary — University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+    <header class="student-header">
+        <div class="brand-info">
+            <h1>Enrollment Summary</h1>
+            <div class="brand-tagline">Your most recent enrollment request</div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'bookmanagement:claim' %}" class="btn btn-secondary">
+                <i class="fas fa-book"></i> Claim Books
+            </a>
+            <a href="{% url 'bookmanagement:claimed' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Claimed Books
+            </a>
+            <form method="post" action="{% url 'landingpage:logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="student-main">
+        <section class="enroll-card">
+            <h2>Enrollment Details</h2>
+
+            {% if enrollment %}
+            <table style="width:100%; border-collapse:collapse; margin-top:1rem;">
+                <tbody>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <th style="text-align:left; padding:0.6rem 0.5rem; color:#4a5568; width:35%;">Course</th>
+                        <td style="padding:0.6rem 0.5rem;">{{ enrollment.course.name|default:"(course removed)" }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <th style="text-align:left; padding:0.6rem 0.5rem; color:#4a5568;">Year Level</th>
+                        <td style="padding:0.6rem 0.5rem;">{{ enrollment.year_level }}</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <th style="text-align:left; padding:0.6rem 0.5rem; color:#4a5568;">Status</th>
+                        <td style="padding:0.6rem 0.5rem;">
+                            <span style="
+                                display:inline-block;
+                                padding:2px 10px;
+                                border-radius:12px;
+                                font-size:0.85rem;
+                                font-weight:600;
+                                {% if enrollment.status == 'verified' %}
+                                    background:#f0fff4; color:#276749;
+                                {% elif enrollment.status == 'rejected' %}
+                                    background:#fff5f5; color:#c53030;
+                                {% else %}
+                                    background:#fffbeb; color:#92400e;
+                                {% endif %}
+                            ">
+                                {{ enrollment.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <th style="text-align:left; padding:0.6rem 0.5rem; color:#4a5568;">Submitted</th>
+                        <td style="padding:0.6rem 0.5rem;">{{ enrollment.submitted_at|date:"F j, Y, g:i a" }}</td>
+                    </tr>
+                    <tr>
+                        <th style="text-align:left; padding:0.6rem 0.5rem; color:#4a5568; vertical-align:top;">Subjects</th>
+                        <td style="padding:0.6rem 0.5rem;">
+                            {% with subjects=enrollment.subjects.all %}
+                            {% if subjects %}
+                            <ul style="margin:0; padding-left:1.2rem;">
+                                {% for subject in subjects %}
+                                <li>{{ subject.code }} — {{ subject.description }} ({{ subject.units }} unit{{ subject.units|pluralize }})</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <span style="color:#718096;">No subjects listed.</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <div class="info-box" style="margin-top:1rem; padding:1rem; background:#f7fafc; border:1px solid #e2e8f0; border-radius:6px; color:#718096;">
+                <i class="fas fa-info-circle" style="margin-right:6px;"></i>
+                No enrollment found. You have not submitted an enrollment request yet.
+            </div>
+            <div style="margin-top:1rem;">
+                <a href="{% url 'studentenrollment:index' %}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Go to Enrollment Form
+                </a>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Profile — University of Bohol Graduate School{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'studentprofile/studentprofile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-container">
+
+    <!-- Header -->
+    <header class="student-header">
+        <div>
+            <h1>Student Profile</h1>
+            <p class="student-subtitle">View and manage your personal information and enrollment details.</p>
+        </div>
+        <div class="student-profile">
+            <div class="profile-dropdown">
+                {% if user.profile_picture %}
+                <img id="header-avatar"
+                     src="{{ user.profile_picture.url }}"
+                     alt="My Account"
+                     class="header-avatar"
+                     onclick="toggleProfileMenu()">
+                {% else %}
+                <img id="header-avatar"
+                     src="{% static 'studenthome/gellman.jpg' %}"
+                     alt="My Account"
+                     class="header-avatar"
+                     onclick="toggleProfileMenu()">
+                {% endif %}
+                <div class="dropdown-menu hidden" id="profile-dropdown-menu">
+                    <a href="{% url 'studenthome:index' %}">Home</a>
+                    <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hidden logout form -->
+    <form id="logout-form" method="post" action="{% url 'landingpage:logout' %}" style="display:none;">
+        {% csrf_token %}
+    </form>
+
+    <!-- Navbar -->
+    <nav class="student-navbar">
+        <button class="nav-item {% if not show_edit %}active{% endif %}" data-target="profile-panel">Profile</button>
+        <button class="nav-item" data-target="enrollment-panel">Enrollment</button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="student-main">
+        <section class="student-content">
+
+            <!-- Email warning notification -->
+            {% if email_missing %}
+            <div class="enroll-card" style="background:#fffbeb; border:1px solid #fcd34d;">
+                <p style="margin:0; color:#92400e;">
+                    ⚠️ <strong>Your profile does not have an email address.</strong>
+                    An email address is necessary for the office to communicate with you.
+                    Please update your profile below.
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Photo upload error notification -->
+            {% with photo_error=request.session.photo_upload_error %}
+            {% if photo_error %}
+            <div class="enroll-card" style="background:#fff5f5; border:1px solid #fed7d7;">
+                <p style="margin:0; color:#991b1b;">
+                    ❌ <strong>Photo upload failed:</strong> {{ photo_error }}
+                </p>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Profile Panel -->
+            <article class="content-panel" id="profile-panel">
+                <div class="enroll-card profile-card">
+
+                    <!-- Profile Picture + Upload Form -->
+                    <div class="profile-picture-section">
+                        <div class="picture-wrapper">
+                            {% if user.profile_picture %}
+                            <img id="profile-picture"
+                                 src="{{ user.profile_picture.url }}"
+                                 alt="Student Photo">
+                            {% else %}
+                            <img id="profile-picture"
+                                 src="{% static 'studenthome/gellman.jpg' %}"
+                                 alt="Student Photo">
+                            {% endif %}
+
+                            <!-- Photo upload form -->
+                            <form method="post"
+                                  action="{% url 'studentprofile:upload_photo' %}"
+                                  enctype="multipart/form-data"
+                                  id="photo-upload-form">
+                                {% csrf_token %}
+                                <label class="change-photo-btn" for="photo-upload" title="Change Photo">
+                                    ✏️ Change Photo
+                                </label>
+                                <input type="file"
+                                       id="photo-upload"
+                                       name="photo"
+                                       accept="image/jpeg,image/png,image/gif"
+                                       onchange="document.getElementById('photo-upload-form').submit();">
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Student Info -->
+                    <div class="profile-info">
+                        <div class="profile-info-header">
+                            <div>
+                                <h2 id="student-fullname">
+                                    {{ user.last_name }}, {{ user.first_name }}{% if user.middle_name %} {{ user.middle_name }}{% endif %}
+                                </h2>
+                                <p class="student-id-display">
+                                    ID No.: <strong>{{ user.id_number|default:"—" }}</strong>
+                                </p>
+                            </div>
+                            {% if not show_edit %}
+                            <a href="{% url 'studentprofile:edit' %}" class="btn-edit-profile">✏️ Edit</a>
+                            {% endif %}
+                        </div>
+
+                        {% if show_edit %}
+                        <!-- Edit Mode — ProfileEditForm -->
+                        <form method="post" action="{% url 'studentprofile:edit' %}" id="edit-form">
+                            {% csrf_token %}
+                            <div class="edit-grid">
+
+                                <label class="edit-field">
+                                    <span class="edit-label">ID Number</span>
+                                    <input type="text"
+                                           name="id_number"
+                                           value="{{ edit_form.id_number.value|default:'' }}"
+                                           placeholder="ID Number">
+                                    {% if edit_form.id_number.errors %}
+                                    <span style="color:#e53e3e; font-size:0.85rem;">
+                                        {{ edit_form.id_number.errors|join:", " }}
+                                    </span>
+                                    {% endif %}
+                                </label>
+
+                                <label class="edit-field">
+                                    <span class="edit-label">Last Name</span>
+                                    <input type="text"
+                                           name="last_name"
+                                           value="{{ edit_form.last_name.value|default:'' }}"
+                                           placeholder="Last Name">
+                                    {% if edit_form.last_name.errors %}
+                                    <span style="color:#e53e3e; font-size:0.85rem;">
+                                        {{ edit_form.last_name.errors|join:", " }}
+                                    </span>
+                                    {% endif %}
+                                </label>
+
+                                <label class="edit-field">
+                                    <span class="edit-label">First Name</span>
+                                    <input type="text"
+                                           name="first_name"
+                                           value="{{ edit_form.first_name.value|default:'' }}"
+                                           placeholder="First Name">
+                                    {% if edit_form.first_name.errors %}
+                                    <span style="color:#e53e3e; font-size:0.85rem;">
+                                        {{ edit_form.first_name.errors|join:", " }}
+                                    </span>
+                                    {% endif %}
+                                </label>
+
+                                <label class="edit-field">
+                                    <span class="edit-label">Middle Name</span>
+                                    <input type="text"
+                                           name="middle_name"
+                                           value="{{ edit_form.middle_name.value|default:'' }}"
+                                           placeholder="Middle Name (optional)">
+                                </label>
+
+                                <label class="edit-field">
+                                    <span class="edit-label">Email</span>
+                                    <input type="email"
+                                           name="email"
+                                           value="{{ edit_form.email.value|default:'' }}"
+                                           placeholder="Email (optional)">
+                                    {% if edit_form.email.errors %}
+                                    <span style="color:#e53e3e; font-size:0.85rem;">
+                                        {{ edit_form.email.errors|join:", " }}
+                                    </span>
+                                    {% endif %}
+                                </label>
+
+                                <!-- Course and Year Level are read-only — set by admin via enrollment verification -->
+                            </div>
+
+                            {% if edit_form.non_field_errors %}
+                            <div style="color:#e53e3e; margin-bottom:12px; font-size:0.9rem;">
+                                {{ edit_form.non_field_errors|join:", " }}
+                            </div>
+                            {% endif %}
+
+                            <div class="edit-actions">
+                                <a href="{% url 'studentprofile:index' %}" class="btn-cancel-edit">Cancel</a>
+                                <button type="submit" class="btn-save-edit">Save Changes</button>
+                            </div>
+                        </form>
+
+                        {% else %}
+                        <!-- View Mode -->
+                        <div id="view-mode">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">ID Number</span>
+                                    <span class="info-value">{{ user.id_number|default:"—" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Last Name</span>
+                                    <span class="info-value">{{ user.last_name|default:"—" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">First Name</span>
+                                    <span class="info-value">{{ user.first_name|default:"—" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Middle Name</span>
+                                    <span class="info-value">{{ user.middle_name|default:"—" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Email</span>
+                                    <span class="info-value">{{ user.email|default:"—" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Course</span>
+                                    <span class="info-value">
+                                        {% if user.course %}{{ user.course.name }}{% else %}—{% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Enrollment Status</span>
+                                    <span class="info-value">
+                                        {% if latest_enrollment %}
+                                            {% if latest_enrollment.status == 'verified' %}
+                                            <span class="enroll-status-pill enrolled">
+                                                ✅ Enrolled
+                                            </span>
+                                            {% elif latest_enrollment.status == 'pending' %}
+                                            <span class="enroll-status-pill pending">
+                                                🕐 Enrollment Pending
+                                            </span>
+                                            {% else %}
+                                            <span class="enroll-status-pill not-enrolled">❌ Not Enrolled</span>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="enroll-status-pill not-enrolled">❌ Not Enrolled</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </article>
+
+            <!-- Enrollment Panel -->
+            <article class="content-panel hidden" id="enrollment-panel">
+                <div class="enroll-card">
+                    <h2>Enrolled Subjects</h2>
+                    <p class="field-note">Showing subjects from your most recent verified enrollment.</p>
+
+                    {% if latest_enrollment %}
+                    <div class="subjects-table-wrapper">
+                        <table class="subjects-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Subject Code</th>
+                                    <th>Subject Name</th>
+                                    <th>Units</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in latest_enrollment.subjects.all %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ subject.code }}</td>
+                                    <td>{{ subject.description }}</td>
+                                    <td>{{ subject.units }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align:center; color:#566376;">
+                                        No subjects found for this enrollment.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="info-box" style="margin-top:20px;">
+                        <strong>Course:</strong>
+                        {{ latest_enrollment.course.name|default:"(course removed)" }}
+                        &nbsp;|&nbsp;
+                        <strong>Year Level:</strong>
+                        {{ latest_enrollment.year_level }}
+                        &nbsp;|&nbsp;
+                        <strong>Total Units:</strong>
+                        {% with total=0 %}
+                        {% for subject in latest_enrollment.subjects.all %}
+                        {% endfor %}
+                        {% endwith %}
+                        {{ latest_enrollment.subjects.all|length }} subject(s)
+                        &nbsp;|&nbsp;
+                        <strong>Status:</strong>
+                        <span class="status-badge enrolled">{{ latest_enrollment.get_status_display }}</span>
+                    </div>
+
+                    {% else %}
+                    <div class="info-box">
+                        <p style="margin:0; color:#566376;">
+                            You have no verified enrollment on record.
+                            Visit the <a href="{% url 'studentenrollment:index' %}">Enrollment page</a> to submit a request.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Nav tab switching
+    const navItems = document.querySelectorAll('.nav-item');
+    const panels = document.querySelectorAll('.content-panel');
+    const studentHeader = document.querySelector('.student-header');
+
+    // Keep padding in sync with fixed header height
+    function syncHeaderOffset() {
+        if (!studentHeader) return;
+        const h = Math.ceil(studentHeader.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--header-height', `${h}px`);
+    }
+    syncHeaderOffset();
+    window.addEventListener('resize', syncHeaderOffset);
+    if (window.ResizeObserver && studentHeader) {
+        new ResizeObserver(syncHeaderOffset).observe(studentHeader);
+    }
+
+    navItems.forEach((button) => {
+        button.addEventListener('click', () => {
+            navItems.forEach((item) => item.classList.remove('active'));
+            button.classList.add('active');
+            const target = button.dataset.target;
+            panels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.id !== target);
+            });
+        });
+    });
+
+    // Profile dropdown
+    function toggleProfileMenu() {
+        const dropdown = document.getElementById('profile-dropdown-menu');
+        dropdown.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('.profile-dropdown')) {
+            const menu = document.getElementById('profile-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}
