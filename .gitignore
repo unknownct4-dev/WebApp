@@ -7,3 +7,6 @@ db.sqlite3
 __pycache__/
 *.pyo
 .env
+node_modules/
+
+/generated/prisma
