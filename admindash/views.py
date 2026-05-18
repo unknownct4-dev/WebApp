@@ -15,6 +15,15 @@ from .models import Course, Subject
 from .forms import CourseForm, SubjectForm
 
 
+def format_form_errors(form):
+    """Return form validation errors without Django's raw bullet formatting."""
+    return ' '.join(
+        str(error)
+        for errors in form.errors.values()
+        for error in errors
+    )
+
+
 class DashboardView(AdminRequiredMixin, TemplateView):
     """
     GET /admin-dashboard/
@@ -134,9 +143,9 @@ class AddCourseView(AdminRequiredMixin, View):
             form.save()  # Save the new Course to the database
             messages.success(request, 'Course added successfully.')
         else:
-            # Flatten all form errors into a single string and store in the session
+            # Store clean form errors for display on the next dashboard load
             # The dashboard view will read and display this error on the next GET
-            errors = form.errors.as_text()
+            errors = format_form_errors(form)
             request.session['course_error'] = errors
         return redirect('admindash:index')  # Always redirect back to the dashboard
 
@@ -177,7 +186,7 @@ class AddSubjectView(AdminRequiredMixin, View):
             messages.success(request, 'Subject added successfully.')
         else:
             # Store form errors in the session for display on the next GET
-            errors = form.errors.as_text()
+            errors = format_form_errors(form)
             request.session['subject_error'] = errors
         return redirect('admindash:index')
 
