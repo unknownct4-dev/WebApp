@@ -620,6 +620,52 @@ def test_super_admin_can_approve_and_revoke_admin_access():
 
 
 @pytest.mark.django_db
+def test_super_admin_reapproving_handled_request_redirects_without_404():
+    super_admin = make_super_admin()
+    requested_user = make_student(prefix="approved_admin")
+    admin_request = AdminRegistrationRequest.objects.create(
+        user=requested_user,
+        status="approved",
+    )
+
+    client = Client()
+    client.force_login(super_admin)
+    response = client.post(
+        reverse("admindash:approve_admin", kwargs={"pk": admin_request.pk})
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("admindash:index")
+    admin_request.refresh_from_db()
+    requested_user.refresh_from_db()
+    assert admin_request.status == "approved"
+    assert requested_user.role == "student"
+
+
+@pytest.mark.django_db
+def test_super_admin_rejecting_handled_request_redirects_without_404():
+    super_admin = make_super_admin()
+    requested_user = make_student(prefix="rejected_admin")
+    admin_request = AdminRegistrationRequest.objects.create(
+        user=requested_user,
+        status="rejected",
+    )
+
+    client = Client()
+    client.force_login(super_admin)
+    response = client.post(
+        reverse("admindash:reject_admin", kwargs={"pk": admin_request.pk})
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("admindash:index")
+    admin_request.refresh_from_db()
+    requested_user.refresh_from_db()
+    assert admin_request.status == "rejected"
+    assert requested_user.role == "student"
+
+
+@pytest.mark.django_db
 def test_only_one_super_admin_can_exist():
     make_super_admin()
 

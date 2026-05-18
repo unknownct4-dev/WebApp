@@ -257,11 +257,15 @@ class ApproveAdminView(SuperAdminRequiredMixin, View):
     """
 
     def post(self, request, pk, *args, **kwargs):
-        admin_request = get_object_or_404(
-            AdminRegistrationRequest,
-            pk=pk,
-            status='pending',
-        )
+        admin_request = get_object_or_404(AdminRegistrationRequest, pk=pk)
+        if admin_request.status != 'pending':
+            messages.info(
+                request,
+                f'Admin request for '
+                f'"{admin_request.user.get_full_name() or admin_request.user.username}" '
+                f'was already {admin_request.get_status_display().lower()}.'
+            )
+            return redirect('admindash:index')
 
         # Mark the registration request as approved
         admin_request.status = 'approved'
@@ -288,11 +292,15 @@ class RejectAdminView(SuperAdminRequiredMixin, View):
     """
 
     def post(self, request, pk, *args, **kwargs):
-        admin_request = get_object_or_404(
-            AdminRegistrationRequest,
-            pk=pk,
-            status='pending',
-        )
+        admin_request = get_object_or_404(AdminRegistrationRequest, pk=pk)
+        if admin_request.status != 'pending':
+            messages.info(
+                request,
+                f'Admin request for '
+                f'"{admin_request.user.get_full_name() or admin_request.user.username}" '
+                f'was already {admin_request.get_status_display().lower()}.'
+            )
+            return redirect('admindash:index')
 
         # Mark the registration request as rejected; user role is unchanged
         admin_request.status = 'rejected'
