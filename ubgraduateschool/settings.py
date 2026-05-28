@@ -32,6 +32,32 @@ def env_bool(name, default=False):
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def unique_list(items):
+    result = []
+    for item in items:
+        if item and item not in result:
+            result.append(item)
+    return result
+
+
+def as_https_origin(value):
+    value = value.strip().rstrip('/')
+    if not value:
+        return ''
+    if value.startswith(('http://', 'https://')):
+        return value
+    return f'https://{value}'
+
+
+def strip_scheme(value):
+    value = value.strip().rstrip('/')
+    if value.startswith('https://'):
+        return value.removeprefix('https://')
+    if value.startswith('http://'):
+        return value.removeprefix('http://')
+    return value
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -47,16 +73,21 @@ SECRET_KEY = os.environ.get(
 DEBUG = env_bool('DEBUG', default=not env_bool('VERCEL'))
 
 # List of hostnames that this Django site can serve; empty means only localhost in DEBUG mode
-ALLOWED_HOSTS = env_list(
-    'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,.vercel.app',
+ALLOWED_HOSTS = unique_list(
+    env_list('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app')
+    + ['.vercel.app']
+    + [strip_scheme(host) for host in env_list('VERCEL_URL')]
+    + [strip_scheme(host) for host in env_list('VERCEL_BRANCH_URL')]
+    + [strip_scheme(host) for host in env_list('VERCEL_PROJECT_PRODUCTION_URL')]
 )
 
-CSRF_TRUSTED_ORIGINS = env_list(
-    'CSRF_TRUSTED_ORIGINS',
-    default='https://*.vercel.app',
+CSRF_TRUSTED_ORIGINS = unique_list(
+    [as_https_origin(origin) for origin in env_list('CSRF_TRUSTED_ORIGINS', default='')]
+    + ['https://*.vercel.app']
+    + [as_https_origin(host) for host in env_list('VERCEL_URL')]
+    + [as_https_origin(host) for host in env_list('VERCEL_BRANCH_URL')]
+    + [as_https_origin(host) for host in env_list('VERCEL_PROJECT_PRODUCTION_URL')]
 )
-
 
 # Application definition
 
