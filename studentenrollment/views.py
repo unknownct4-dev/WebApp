@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect  # render() builds an HTML respons
 from django.views import View                  # Base class for class-based views
 from django.views.generic import TemplateView  # Convenience view that just renders a template
 from django.http import JsonResponse           # Returns a JSON-encoded HTTP response
+from django.db import transaction
 
 from landingpage.mixins import StudentRequiredMixin  # Restricts access to authenticated students only
 from admindash.models import Course, Subject          # Course and Subject models from the admin app
@@ -48,25 +49,20 @@ class EnrollmentView(StudentRequiredMixin, View):
                 'receipt_errors': ['No valid files were uploaded. Please try again.'],
             })
 
-        enrollment_request = EnrollmentRequest.objects.create(
-            student=request.user,
-            course=form.cleaned_data['course'],
-            year_level=form.cleaned_data['year_level'],
-            semester=form.cleaned_data['semester'],
-            status='pending',
-        )
-        enrollment_request.subjects.set(form.cleaned_data['subjects'])
+        try:
+            with transaction.atomic():
+                enrollment_request = EnrollmentRequest.objects.create(
+                    student=request.user,
+                    course=form.cleaned_data['course'],
+                    year_level=form.cleaned_data['year_level'],
+                    semester=form.cleaned_data['semester'],
+                    status='pending',
+                )
+                enrollment_request.subjects.set(form.cleaned_data['subjects'])
 
-        saved_count = 0
-        for receipt_file in valid_files:
-            try:
-                EnrollmentReceipt.objects.create(enrollment_request=enrollment_request, image=receipt_file)
-                saved_count += 1
-            except Exception:
-                pass
-
-        if saved_count == 0:
-            enrollment_request.delete()
+                for receipt_file in valid_files:
+                    EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
+        except Exception:
             return render(request, self.template_name, {
                 'form': form, 'courses': courses,
                 'receipt_errors': ['Failed to save proof of payment. Please try again.'],

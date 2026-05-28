@@ -3,10 +3,12 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import TemplateView
 from django.http import JsonResponse
+from django.db import transaction
 
 from landingpage.mixins import StudentRequiredMixin
 from admindash.models import Course
 from studentenrollment.models import EnrollmentRequest, EnrollmentReceipt
+from studentenrollment.forms import validate_receipt_files
 from bookmanagement.models import BookSubmission
 from .forms import HomeEnrollmentForm
 
@@ -66,46 +68,26 @@ class EnrollView(StudentRequiredMixin, View):
                     errors.append(error)  # Flatten all field errors into a single list
             return JsonResponse({'status': 'error', 'errors': errors}, status=400)
 
-        # Validate that at least one receipt file was uploaded
-        receipts = request.FILES.getlist('receipts')  # Get all files uploaded with the name 'receipts'
-        if not receipts:
-            return JsonResponse({
-                'status': 'error',
-                'errors': ['Please upload at least one proof of payment.']
-            }, status=400)
+        receipt_files = request.FILES.getlist('receipts')
+        valid_files, errors = validate_receipt_files(receipt_files)
+        if errors:
+            return JsonResponse({'status': 'error', 'errors': errors}, status=400)
 
-        # Enforce the maximum of 3 receipt files
-        if len(receipts) > 3:
-            return JsonResponse({
-                'status': 'error',
-                'errors': ['You can upload a maximum of 3 proof of payment images.']
-            }, status=400)
-
-        enrollment_request = EnrollmentRequest.objects.create(
-            student=request.user,
-            course=form.cleaned_data['course'],
-            year_level=form.cleaned_data['year_level'],
-            semester=form.cleaned_data['semester'],
-            status='pending',
-        )
-        # Set the many-to-many subjects relationship
-        enrollment_request.subjects.set(form.cleaned_data['subjects'])
-
-        # Save each receipt file as an EnrollmentReceipt record
-        saved_count = 0
-        for receipt_file in receipts:
-            try:
-                EnrollmentReceipt.objects.create(
-                    enrollment_request=enrollment_request,
-                    image=receipt_file,  # Django saves the file to MEDIA_ROOT/receipts/ automatically
+        try:
+            with transaction.atomic():
+                enrollment_request = EnrollmentRequest.objects.create(
+                    student=request.user,
+                    course=form.cleaned_data['course'],
+                    year_level=form.cleaned_data['year_level'],
+                    semester=form.cleaned_data['semester'],
+                    status='pending',
                 )
-                saved_count += 1
-            except Exception:
-                pass  # Skip files that fail to save (e.g. disk error)
+                # Set the many-to-many subjects relationship
+                enrollment_request.subjects.set(form.cleaned_data['subjects'])
 
-        # If no receipts were saved at all, roll back the enrollment request
-        if saved_count == 0:
-            enrollment_request.delete()  # Remove the incomplete enrollment request
+                for receipt_file in valid_files:
+                    EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
+        except Exception:
             return JsonResponse({
                 'status': 'error',
                 'errors': ['Failed to save proof of payment. Please try again.']

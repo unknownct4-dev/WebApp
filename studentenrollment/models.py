@@ -1,3 +1,5 @@
+import base64
+
 from django.db import models    # Base module for all Django model fields
 from django.conf import settings  # Access AUTH_USER_MODEL without a hard import
 
@@ -86,8 +88,37 @@ class EnrollmentReceipt(models.Model):
     )
 
     # The uploaded image file; stored in MEDIA_ROOT/receipts/
-    image = models.ImageField(upload_to='receipts/')
+    # Older receipts may still use MEDIA_ROOT/receipts/. New uploads are stored
+    # in the database so they work on serverless hosts without persistent media.
+    image = models.ImageField(upload_to='receipts/', null=True, blank=True)
+    image_data = models.BinaryField(null=True, blank=True)
+    content_type = models.CharField(max_length=100, blank=True)
+    original_filename = models.CharField(max_length=255, blank=True)
     # Validation: JPEG/PNG only, max 5 MB — enforced in the form clean() method
+
+    @classmethod
+    def create_from_upload(cls, enrollment_request, uploaded_file):
+        return cls.objects.create(
+            enrollment_request=enrollment_request,
+            image_data=uploaded_file.read(),
+            content_type=getattr(uploaded_file, 'content_type', '') or '',
+            original_filename=getattr(uploaded_file, 'name', '')[:255],
+        )
+
+    @property
+    def display_url(self):
+        if self.image_data:
+            encoded = base64.b64encode(bytes(self.image_data)).decode('ascii')
+            content_type = self.content_type or 'image/jpeg'
+            return f'data:{content_type};base64,{encoded}'
+
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                return ''
+
+        return ''
 
     def __str__(self):
         return f"Receipt for {self.enrollment_request}"
