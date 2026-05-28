@@ -170,6 +170,9 @@ STATIC_URL = '/static/'                                # URL prefix for serving 
 STATICFILES_DIRS = [BASE_DIR / 'staticfiles']          # Source static files committed with the app
 STATIC_ROOT = BASE_DIR / 'staticfiles_build' / 'static' # collectstatic output for production
 STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
@@ -179,6 +182,10 @@ MEDIA_URL = '/media/'                      # URL prefix for serving user-uploade
 MEDIA_ROOT = BASE_DIR / 'media'           # Directory on disk where uploaded files are saved
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=not DEBUG)
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS')
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 

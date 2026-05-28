@@ -28,6 +28,7 @@ DEBUG=False
 DATABASE_URL=your-postgres-url
 ALLOWED_HOSTS=.vercel.app,your-domain.com
 CSRF_TRUSTED_ORIGINS=https://*.vercel.app,https://your-domain.com
+SECURE_SSL_REDIRECT=True
 ```
 
 If you do not have a custom domain yet, keep only the Vercel values:
@@ -36,6 +37,8 @@ If you do not have a custom domain yet, keep only the Vercel values:
 ALLOWED_HOSTS=.vercel.app
 CSRF_TRUSTED_ORIGINS=https://*.vercel.app
 ```
+
+`SECURE_HSTS_SECONDS` can stay unset for the first redeploy. Add it later only after confirming the production domain works over HTTPS.
 
 ## 3. Push To GitHub
 
