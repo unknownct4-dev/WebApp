@@ -1,3 +1,5 @@
+import mimetypes
+
 from django.shortcuts import redirect, get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
@@ -5,10 +7,11 @@ from django.db.models import Q
 from django.db import transaction
 from django.contrib import messages
 from django.utils import timezone
+from django.http import Http404, HttpResponse
 
 from landingpage.mixins import AdminRequiredMixin, SuperAdminRequiredMixin
 from landingpage.models import CustomUser, AdminRegistrationRequest
-from studentenrollment.models import EnrollmentRequest
+from studentenrollment.models import EnrollmentRequest, EnrollmentReceipt
 from bookmanagement.models import BookSubmission
 
 from .models import Course, Subject
@@ -128,6 +131,42 @@ class EnrolledRecordsPrintView(AdminRequiredMixin, TemplateView):
         )
         context['generated_at'] = timezone.localtime()
         return context
+
+
+class ReceiptImageView(AdminRequiredMixin, View):
+    """
+    GET /admin-dashboard/receipts/<pk>/image/
+    Streams a proof-of-payment receipt to admins without embedding image bytes in
+    the dashboard HTML.
+    """
+
+    def get(self, request, pk, *args, **kwargs):
+        receipt = get_object_or_404(EnrollmentReceipt, pk=pk)
+
+        if receipt.image_data:
+            content_type = receipt.content_type or 'image/jpeg'
+            return HttpResponse(bytes(receipt.image_data), content_type=content_type)
+
+        if receipt.image:
+            try:
+                receipt.image.open('rb')
+                content = receipt.image.read()
+            except Exception as exc:
+                raise Http404('Receipt image is unavailable.') from exc
+            finally:
+                try:
+                    receipt.image.close()
+                except Exception:
+                    pass
+
+            content_type = (
+                receipt.content_type
+                or mimetypes.guess_type(receipt.image.name)[0]
+                or 'application/octet-stream'
+            )
+            return HttpResponse(content, content_type=content_type)
+
+        raise Http404('Receipt image is unavailable.')
 
 
 class AddCourseView(AdminRequiredMixin, View):

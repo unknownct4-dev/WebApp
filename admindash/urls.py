@@ -30,6 +30,9 @@ urlpatterns = [
     # Print verified student enrollment records sorted by course and year
     path('students/enrolled-records/print/', views.EnrolledRecordsPrintView.as_view(), name='print_enrolled_records'),
 
+    # View a proof-of-payment receipt image (admin only)
+    path('receipts/<int:pk>/image/', views.ReceiptImageView.as_view(), name='receipt_image'),
+
     # Approve a pending admin registration request and promote the user to admin (POST only)
     path('admin-requests/<int:pk>/approve/', views.ApproveAdminView.as_view(), name='approve_admin'),
 
