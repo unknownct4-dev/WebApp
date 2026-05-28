@@ -11,7 +11,11 @@ from django.http import Http404, HttpResponse
 
 from landingpage.mixins import AdminRequiredMixin, SuperAdminRequiredMixin
 from landingpage.models import CustomUser, AdminRegistrationRequest
-from studentenrollment.models import EnrollmentRequest, EnrollmentReceipt
+from studentenrollment.models import (
+    EnrollmentRequest,
+    EnrollmentReceipt,
+    receipt_database_image_fields_ready,
+)
 from bookmanagement.models import BookSubmission
 
 from .models import Course, Subject
@@ -46,8 +50,12 @@ class DashboardView(AdminRequiredMixin, TemplateView):
         # Fetch all courses and their subjects in a single query (avoids N+1 queries)
         context['courses'] = Course.objects.prefetch_related('subjects').all()
 
-        # Start with all enrollment requests, joining student, course, receipts, and subjects data
-        qs = EnrollmentRequest.objects.select_related('student', 'course').prefetch_related('receipts', 'subjects').all()
+        can_show_receipts = receipt_database_image_fields_ready()
+
+        # Start with all enrollment requests, joining student, course, and subjects data
+        qs = EnrollmentRequest.objects.select_related('student', 'course').prefetch_related('subjects').all()
+        if can_show_receipts:
+            qs = qs.prefetch_related('receipts')
 
         # Read optional filter parameters from the query string (e.g. ?name=Juan&status=pending)
         search_name = self.request.GET.get('name', '').strip()
@@ -68,6 +76,7 @@ class DashboardView(AdminRequiredMixin, TemplateView):
             qs = qs.filter(status=search_status)
 
         context['enrollment_requests'] = qs
+        context['can_show_receipts'] = can_show_receipts
 
         # Count only pending enrollment requests for the notification badge
         context['pending_enrollment_count'] = qs.filter(status='pending').count()
@@ -141,6 +150,9 @@ class ReceiptImageView(AdminRequiredMixin, View):
     """
 
     def get(self, request, pk, *args, **kwargs):
+        if not receipt_database_image_fields_ready():
+            raise Http404('Receipt image storage is not ready.')
+
         receipt = get_object_or_404(EnrollmentReceipt, pk=pk)
 
         if receipt.image_data:

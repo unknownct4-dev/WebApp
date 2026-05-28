@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import render, redirect  # render() builds an HTML response; redirect() sends the browser to a new URL
 from django.views import View                  # Base class for class-based views
 from django.views.generic import TemplateView  # Convenience view that just renders a template
@@ -8,6 +10,8 @@ from landingpage.mixins import StudentRequiredMixin  # Restricts access to authe
 from admindash.models import Course, Subject          # Course and Subject models from the admin app
 from .models import EnrollmentRequest, EnrollmentReceipt  # Enrollment models defined in this app
 from .forms import EnrollmentForm, validate_receipt_files  # Form and receipt validation utility
+
+logger = logging.getLogger(__name__)
 
 
 class EnrollmentView(StudentRequiredMixin, View):
@@ -49,24 +53,30 @@ class EnrollmentView(StudentRequiredMixin, View):
                 'receipt_errors': ['No valid files were uploaded. Please try again.'],
             })
 
-        try:
-            with transaction.atomic():
-                enrollment_request = EnrollmentRequest.objects.create(
-                    student=request.user,
-                    course=form.cleaned_data['course'],
-                    year_level=form.cleaned_data['year_level'],
-                    semester=form.cleaned_data['semester'],
-                    status='pending',
-                )
-                enrollment_request.subjects.set(form.cleaned_data['subjects'])
+        with transaction.atomic():
+            enrollment_request = EnrollmentRequest.objects.create(
+                student=request.user,
+                course=form.cleaned_data['course'],
+                year_level=form.cleaned_data['year_level'],
+                semester=form.cleaned_data['semester'],
+                status='pending',
+            )
+            enrollment_request.subjects.set(form.cleaned_data['subjects'])
 
-                for receipt_file in valid_files:
-                    EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
-        except Exception:
-            return render(request, self.template_name, {
-                'form': form, 'courses': courses,
-                'receipt_errors': ['Failed to save proof of payment. Please try again.'],
-            })
+        for receipt_file in valid_files:
+            try:
+                EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
+            except Exception:
+                logger.exception(
+                    'Failed to save receipt for enrollment request %s.',
+                    enrollment_request.pk,
+                )
+
+        if not enrollment_request.receipts.exists():
+            logger.warning(
+                'Enrollment request %s was saved without receipt records.',
+                enrollment_request.pk,
+            )
 
         request.session['enrollment_request_id'] = enrollment_request.pk
         return redirect('studentenrollment:confirmation')

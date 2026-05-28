@@ -1,4 +1,5 @@
 import json
+import logging
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import TemplateView
@@ -11,6 +12,8 @@ from studentenrollment.models import EnrollmentRequest, EnrollmentReceipt
 from studentenrollment.forms import validate_receipt_files
 from bookmanagement.models import BookSubmission
 from .forms import HomeEnrollmentForm
+
+logger = logging.getLogger(__name__)
 
 
 class HomeView(StudentRequiredMixin, TemplateView):
@@ -73,21 +76,33 @@ class EnrollView(StudentRequiredMixin, View):
         if errors:
             return JsonResponse({'status': 'error', 'errors': errors}, status=400)
 
-        try:
-            with transaction.atomic():
-                enrollment_request = EnrollmentRequest.objects.create(
-                    student=request.user,
-                    course=form.cleaned_data['course'],
-                    year_level=form.cleaned_data['year_level'],
-                    semester=form.cleaned_data['semester'],
-                    status='pending',
-                )
-                # Set the many-to-many subjects relationship
-                enrollment_request.subjects.set(form.cleaned_data['subjects'])
+        with transaction.atomic():
+            enrollment_request = EnrollmentRequest.objects.create(
+                student=request.user,
+                course=form.cleaned_data['course'],
+                year_level=form.cleaned_data['year_level'],
+                semester=form.cleaned_data['semester'],
+                status='pending',
+            )
+            # Set the many-to-many subjects relationship
+            enrollment_request.subjects.set(form.cleaned_data['subjects'])
 
-                for receipt_file in valid_files:
-                    EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
-        except Exception:
+        for receipt_file in valid_files:
+            try:
+                EnrollmentReceipt.create_from_upload(enrollment_request, receipt_file)
+            except Exception:
+                logger.exception(
+                    'Failed to save receipt for enrollment request %s.',
+                    enrollment_request.pk,
+                )
+
+        if not enrollment_request.receipts.exists():
+            logger.warning(
+                'Enrollment request %s was saved without receipt records.',
+                enrollment_request.pk,
+            )
+
+        if not enrollment_request.pk:
             return JsonResponse({
                 'status': 'error',
                 'errors': ['Failed to save proof of payment. Please try again.']

@@ -308,6 +308,7 @@
                           {% endif %}
                         {% endwith %}
                         <!-- Receipts button -->
+                        {% if can_show_receipts %}
                         {% with receipts=req.receipts.all %}
                           {% if receipts %}
                             <button type="button"
@@ -317,6 +318,7 @@
                             </button>
                           {% endif %}
                         {% endwith %}
+                        {% endif %}
                         <!-- Delete student account -->
                         <form method="post"
                               action="{% url 'admindash:delete_student' req.student.pk %}"
@@ -403,6 +405,7 @@
               {% endwith %}
 
               <!-- Receipt modal -->
+              {% if can_show_receipts %}
               {% with receipts=req.receipts.all %}
                 {% if receipts %}
                   <div id="modal-{{ req.pk }}"
@@ -452,6 +455,7 @@
                   </div>
                 {% endif %}
               {% endwith %}
+              {% endif %}
 
               <!-- Print Preview modal — only for verified enrollments -->
               {% if req.status == 'verified' %}
@@ -577,6 +581,7 @@
                       </table>
 
                       <!-- Proof of Payment Receipts -->
+                      {% if can_show_receipts %}
                       {% with receipts=req.receipts.all %}
                       {% if receipts %}
                       <div style="margin-top:28px;border-top:1px solid #e5e7eb;padding-top:16px;">
@@ -596,6 +601,7 @@
                       </div>
                       {% endif %}
                       {% endwith %}
+                      {% endif %}
 
                       <!-- Footer note -->
                       <p style="margin-top:20px;font-size:0.75rem;color:#9ca3af;text-align:center;">

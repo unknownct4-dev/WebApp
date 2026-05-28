@@ -1,7 +1,29 @@
 import base64
+from functools import lru_cache
 
-from django.db import models    # Base module for all Django model fields
+from django.db import connection, models    # Base module for all Django model fields
 from django.conf import settings  # Access AUTH_USER_MODEL without a hard import
+
+
+@lru_cache(maxsize=1)
+def receipt_database_image_fields_ready():
+    """
+    Return True when the production database has the columns needed for
+    database-backed receipt images.
+    """
+    try:
+        with connection.cursor() as cursor:
+            columns = {
+                column.name
+                for column in connection.introspection.get_table_description(
+                    cursor,
+                    EnrollmentReceipt._meta.db_table,
+                )
+            }
+    except Exception:
+        return False
+
+    return {'image_data', 'content_type', 'original_filename'}.issubset(columns)
 
 
 class EnrollmentRequest(models.Model):
@@ -98,6 +120,9 @@ class EnrollmentReceipt(models.Model):
 
     @classmethod
     def create_from_upload(cls, enrollment_request, uploaded_file):
+        if not receipt_database_image_fields_ready():
+            return None
+
         return cls.objects.create(
             enrollment_request=enrollment_request,
             image_data=uploaded_file.read(),
