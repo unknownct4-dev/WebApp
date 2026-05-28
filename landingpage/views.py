@@ -3,6 +3,9 @@ from django.views import View                                    # Base class fo
 from django.views.generic import TemplateView                    # Convenience view that just renders a template
 from django.contrib.auth import authenticate, login, logout      # Django's auth helpers: verify credentials, start/end a session
 from django.contrib.auth import get_user_model                   # Returns the active user model (CustomUser)
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import StudentRegistrationForm, AdminRegistrationForm  # Registration forms defined in this app
 from .models import AdminRegistrationRequest                       # Model for pending admin account requests
@@ -17,6 +20,11 @@ class IndexView(TemplateView):
     No authentication required; anyone can visit this page.
     """
     template_name = 'landingpage/index.html'
+
+    @method_decorator(never_cache)
+    @method_decorator(ensure_csrf_cookie)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """Pass empty registration forms to the template so they render on first visit."""
