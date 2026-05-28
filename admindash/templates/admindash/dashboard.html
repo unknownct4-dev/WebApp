@@ -72,22 +72,19 @@
 
   <main class="student-main">
     <section class="student-content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="info-box" style="margin-bottom:16px;border-color:
+            {% if message.tags == 'success' %}#6ee7b7{% elif message.tags == 'info' %}#93c5fd{% else %}#fca5a5{% endif %};">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
 
       <!-- ══════════════════════════════════════════════════════════════
            PANEL 1 — Manage Courses
       ══════════════════════════════════════════════════════════════ -->
-      <article class="content-panel" id="courses-panel">
-
-        <!-- Flash messages -->
-        {% if messages %}
-          {% for message in messages %}
-            <div class="info-box" style="margin-bottom:16px;border-color:
-              {% if message.tags == 'success' %}#6ee7b7{% else %}#fca5a5{% endif %};">
-              {{ message }}
-            </div>
-          {% endfor %}
-        {% endif %}
-
+      <article class="content-panel {% if active_panel != 'courses-panel' %}hidden{% endif %}" id="courses-panel">
         <!-- Add New Course -->
         <div class="enroll-card add-course-card" style="margin-bottom:24px;">
           <h2 class="add-course-title">+ Add New Course</h2>
@@ -211,7 +208,7 @@
       <!-- ══════════════════════════════════════════════════════════════
            PANEL 2 — Manage Students
       ══════════════════════════════════════════════════════════════ -->
-      <article class="content-panel hidden" id="students-panel">
+      <article class="content-panel {% if active_panel != 'students-panel' %}hidden{% endif %}" id="students-panel">
         <div class="enroll-card">
           <div class="students-panel-header">
             <h2>Enrollment Requests</h2>
@@ -1043,6 +1040,7 @@
   const navButtons = Array.from(document.querySelectorAll('.nav-item'));
   const panels = Array.from(document.querySelectorAll('.content-panel'));
   const studentHeader = document.querySelector('.student-header');
+  const activePanel = "{{ active_panel|default:'courses-panel' }}";
 
   // Keep padding in sync with fixed header height
   function syncHeaderOffset() {
@@ -1056,14 +1054,23 @@
     new ResizeObserver(syncHeaderOffset).observe(studentHeader);
   }
 
+  function activatePanel(target) {
+    navButtons.forEach((item) => {
+      item.classList.toggle('active', item.dataset.target === target);
+    });
+    panels.forEach((panel) => {
+      panel.classList.toggle('hidden', panel.id !== target);
+    });
+  }
+
+  activatePanel(activePanel);
+
   navButtons.forEach((button) => {
     button.addEventListener('click', () => {
       navButtons.forEach((item) => item.classList.remove('active'));
       button.classList.add('active');
       const target = button.dataset.target;
-      panels.forEach((panel) => {
-        panel.classList.toggle('hidden', panel.id !== target);
-      });
+      activatePanel(target);
     });
   });
 

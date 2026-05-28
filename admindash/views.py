@@ -112,6 +112,7 @@ class DashboardView(AdminRequiredMixin, TemplateView):
         # Pop error messages stored in the session by the POST views (consumed once, then cleared)
         context['course_error'] = self.request.session.pop('course_error', None)
         context['subject_error'] = self.request.session.pop('subject_error', None)
+        context['active_panel'] = self.request.session.pop('active_admin_panel', 'courses-panel')
 
         return context
 
@@ -263,6 +264,7 @@ class VerifyEnrollmentView(AdminRequiredMixin, View):
     """
 
     def post(self, request, pk, *args, **kwargs):
+        request.session['active_admin_panel'] = 'students-panel'
         enrollment = get_object_or_404(EnrollmentRequest, pk=pk)  # Fetch or 404
 
         if enrollment.status == 'pending':
@@ -278,12 +280,10 @@ class VerifyEnrollmentView(AdminRequiredMixin, View):
             student.save(update_fields=['course', 'year_level'])
 
             messages.success(request, 'Enrollment request verified.')
+        elif enrollment.status == 'verified':
+            messages.success(request, 'Enrollment request is already verified.')
         else:
-            # Store an error message in the session; the dashboard will display it
-            request.session['course_error'] = (
-                f'Cannot verify enrollment #{pk}: '
-                f'current status is "{enrollment.status}" (must be "pending").'
-            )
+            messages.info(request, 'Enrollment request was already rejected.')
         return redirect('admindash:index')
 
 
@@ -294,6 +294,7 @@ class RejectEnrollmentView(AdminRequiredMixin, View):
     """
 
     def post(self, request, pk, *args, **kwargs):
+        request.session['active_admin_panel'] = 'students-panel'
         enrollment = get_object_or_404(EnrollmentRequest, pk=pk)  # Fetch or 404
 
         if enrollment.status != 'rejected':
@@ -301,10 +302,7 @@ class RejectEnrollmentView(AdminRequiredMixin, View):
             enrollment.save(update_fields=['status'])  # Only update the status column
             messages.success(request, 'Enrollment request rejected.')
         else:
-            # Already rejected — store an error message in the session
-            request.session['course_error'] = (
-                f'Enrollment #{pk} is already rejected.'
-            )
+            messages.success(request, 'Enrollment request is already rejected.')
         return redirect('admindash:index')
 
 
